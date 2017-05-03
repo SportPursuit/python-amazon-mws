@@ -5,11 +5,11 @@
 # Based on http://code.google.com/p/amazon-mws-python
 #
 
-import urllib
+from urllib.parse import quote
 import hashlib
 import hmac
 import base64
-import utils
+from .utils import xml2dict
 import re
 try:
     from xml.etree.ElementTree import ParseError as XMLError
@@ -32,21 +32,22 @@ __all__ = [
     'Sellers',
 ]
 
-# See https://images-na.ssl-images-amazon.com/images/G/01/mwsportal/doc/en_US/bde/MWSDeveloperGuide._V357736853_.pdf page 8
+# See https://images-na.ssl-images-amazon.com/images/G/01/mwsportal/doc/en_US/bde/MWSDeveloperGuide._V357736853_.pdf
+# page 8
 # for a list of the end points and marketplace IDs
 
 MARKETPLACES = {
-    "CA" : "https://mws.amazonservices.ca", #A2EUQ1WTGCTBG2
-    "US" : "https://mws.amazonservices.com", #ATVPDKIKX0DER",
-    "DE" : "https://mws-eu.amazonservices.com", #A1PA6795UKMFR9
-    "ES" : "https://mws-eu.amazonservices.com", #A1RKKUPIHCS9HS
-    "FR" : "https://mws-eu.amazonservices.com", #A13V1IB3VIYZZH
-    "IN" : "https://mws.amazonservices.in", #A21TJRUUN4KGV
-    "IT" : "https://mws-eu.amazonservices.com", #APJ6JRA9NG5V4
-    "UK" : "https://mws-eu.amazonservices.com", #A1F83G8C2ARO7P
-    "JP" : "https://mws.amazonservices.jp", #A1VC38T7YXB528
-    "CN" : "https://mws.amazonservices.com.cn", #AAHKV2X7AFYLW
-    "MX" : "https://mws.amazonservices.com.mx", #A1AM78C64UM0Y8    
+    "CA": "https://mws.amazonservices.ca",  # A2EUQ1WTGCTBG2
+    "US": "https://mws.amazonservices.com",  # ATVPDKIKX0DER",
+    "DE": "https://mws-eu.amazonservices.com",  # A1PA6795UKMFR9
+    "ES": "https://mws-eu.amazonservices.com",  # A1RKKUPIHCS9HS
+    "FR": "https://mws-eu.amazonservices.com",  # A13V1IB3VIYZZH
+    "IN": "https://mws.amazonservices.in",  # A21TJRUUN4KGV
+    "IT": "https://mws-eu.amazonservices.com",  # APJ6JRA9NG5V4
+    "UK": "https://mws-eu.amazonservices.com",  # A1F83G8C2ARO7P
+    "JP": "https://mws.amazonservices.jp",  # A1VC38T7YXB528
+    "CN": "https://mws.amazonservices.com.cn",  # AAHKV2X7AFYLW
+    "MX": "https://mws.amazonservices.com.mx",  # A1AM78C64UM0Y8
 }
 
 
@@ -64,7 +65,7 @@ def calc_md5(string):
     """
     md = hashlib.md5()
     md.update(string)
-    return base64.encodestring(md.digest()).strip('\n')
+    return base64.encodebytes(md.digest()).strip('\n')
 
 
 def remove_empty(d):
@@ -87,7 +88,7 @@ class DictWrapper(object):
     def __init__(self, xml, rootkey=None):
         self.original = xml
         self._rootkey = rootkey
-        self._mydict = utils.xml2dict().fromstring(remove_namespace(xml))
+        self._mydict = xml2dict().fromstring(remove_namespace(xml))
         self._response_dict = self._mydict.get(self._mydict.keys()[0],
                                                self._mydict)
 
@@ -156,8 +157,8 @@ class MWS(object):
             self.domain = MARKETPLACES[region]
         else:
             error_msg = "Incorrect region supplied ('%(region)s'). Must be one of the following: %(marketplaces)s" % {
-                "marketplaces" : ', '.join(MARKETPLACES.keys()),
-                "region" : region,
+                "marketplaces": ', '.join(MARKETPLACES.keys()),
+                "region": region,
             }
             raise MWSError(error_msg)
 
@@ -180,9 +181,10 @@ class MWS(object):
         if self.auth_token:
             params['MWSAuthToken'] = self.auth_token
         params.update(extra_data)
-        request_description = '&'.join(['%s=%s' % (k, urllib.quote(params[k], safe='-_.~').encode('utf-8')) for k in sorted(params)])
+        request_description = '&'.join(['%s=%s' % (k, quote(params[k], safe='-_.~').encode('utf-8'))
+                                        for k in sorted(params)])
         signature = self.calc_signature(method, request_description)
-        url = '%s%s?%s&Signature=%s' % (self.domain, self.uri, request_description, urllib.quote(signature))
+        url = '%s%s?%s&Signature=%s' % (self.domain, self.uri, request_description, quote(signature))
         headers = {'User-Agent': 'python-amazon-mws/0.0.1 (Language=Python)'}
         headers.update(kwargs.get('extra_headers', {}))
 
@@ -205,7 +207,7 @@ class MWS(object):
             except XMLError:
                 parsed_response = DataWrapper(data, response.headers)
 
-        except HTTPError, e:
+        except HTTPError as e:
             error = MWSError(str(e.response.text))
             error.response = e.response
             raise error
@@ -225,7 +227,8 @@ class MWS(object):
     def calc_signature(self, method, request_description):
         """Calculate MWS signature to interface with Amazon
         """
-        sig_data = method + '\n' + self.domain.replace('https://', '').lower() + '\n' + self.uri + '\n' + request_description
+        sig_data = method + '\n' + self.domain.replace('https://', '').lower() + '\n' + self.uri + '\n' \
+            + request_description
         return base64.b64encode(hmac.new(str(self.secret_key), sig_data, hashlib.sha256).digest())
 
     def get_timestamp(self):
@@ -276,7 +279,7 @@ class Feeds(MWS):
                                  extra_headers={'Content-MD5': md, 'Content-Type': content_type})
 
     def get_feed_submission_list(self, feedids=None, max_count=None, feedtypes=None,
-                                    processingstatuses=None, fromdate=None, todate=None):
+                                 processingstatuses=None, fromdate=None, todate=None):
         """
         Returns a list of all feed submissions submitted in the previous 90 days.
         That match the query parameters.
@@ -321,7 +324,7 @@ class Reports(MWS):
 
     ACCOUNT_TYPE = "Merchant"
 
-    ## REPORTS ###
+    # REPORTS #
 
     def get_report(self, report_id):
         data = dict(Action='GetReport', ReportId=report_id)
@@ -381,8 +384,7 @@ class Reports(MWS):
         data.update(self.enumerate_param('MarketplaceIdList.Id.', marketplaceids))
         return self.make_request(data)
 
-
-    ### ReportSchedule ###
+    # ReportSchedule #
 
     def get_report_schedule_list(self, types=()):
         data = dict(Action='GetReportScheduleList')
@@ -466,7 +468,7 @@ class Products(MWS):
         data.update(self.enumerate_param('ASINList.ASIN.', asins))
         return self.make_request(data)
 
-    def get_matching_product_for_id(self, marketplaceid, type, ids):
+    def get_matching_product_for_id(self, marketplaceid, id_type, ids):
         """ Returns a list of products and their attributes, based on a list of
             product identifier values (ASIN, SellerSKU, UPC, EAN, ISBN, GCID  and JAN)
             The identifier type is case sensitive.
@@ -474,7 +476,7 @@ class Products(MWS):
         """
         data = dict(Action='GetMatchingProductForId',
                     MarketplaceId=marketplaceid,
-                    IdType=type)
+                    IdType=id_type)
         data.update(self.enumerate_param('IdList.Id.', ids))
         return self.make_request(data)
 
@@ -579,7 +581,7 @@ class Sellers(MWS):
         return self.make_request(data)
 
 
-#### Fulfillment APIs ####
+# Fulfillment APIs #
 
 
 class InboundShipments(MWS):

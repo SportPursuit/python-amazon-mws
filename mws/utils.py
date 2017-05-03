@@ -7,7 +7,7 @@ Borrowed from https://github.com/timotheus/ebaysdk-python
 @author: pierre
 """
 
-import xml.etree.ElementTree as ET
+from xml.etree import ElementTree
 import re
 
 
@@ -97,6 +97,6 @@ class xml2dict(object):
 
     def fromstring(self, s):
         """parse a string"""
-        t = ET.fromstring(s)
+        t = ElementTree.fromstring(s)
         root_tag, root_tree = self._namespace_split(t.tag, self._parse_node(t))
         return object_dict({root_tag: root_tree})
