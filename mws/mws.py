@@ -182,7 +182,7 @@ class MWS(object):
         if self.auth_token:
             params['MWSAuthToken'] = self.auth_token
         params.update(extra_data)
-        request_description = '&'.join(['%s=%s' % (k, quote(params[k], safe='-_.~').encode('utf-8'))
+        request_description = '&'.join(['%s=%s' % (k, quote(params[k], safe='-_.~'))
                                         for k in sorted(params)])
         signature = self.calc_signature(method, request_description)
         url = '%s%s?%s&Signature=%s' % (self.domain, self.uri, request_description, quote(signature))
