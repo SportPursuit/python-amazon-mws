@@ -110,7 +110,8 @@ class DataWrapper(object):
         if 'content-md5' in header:
             hash_ = calc_md5(self.original)
             if header['content-md5'] != hash_:
-                raise MWSError("Wrong Contentlength, maybe amazon error...\nData: {0}".format(data))
+                raise MWSError("Wrong Contentlength, maybe amazon error...\nHeader md5: {0}"
+                               "\nCalc md5: {1}\nData: {2}".format(header['content-md5'], hash_, data))
 
     @property
     def parsed(self):
