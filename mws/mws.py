@@ -204,9 +204,9 @@ class MWS(object):
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
             try:
-                parsed_response = DictWrapper(data, extra_data.get("Action") + "Result")
+                parsed_response = DictWrapper(response.text, extra_data.get("Action") + "Result")
             except XMLError:
-                parsed_response = DataWrapper(data.encode('utf-8'), response.headers)
+                parsed_response = DataWrapper(response.content, response.headers)
 
         except HTTPError as e:
             error = MWSError(str(e.response.text))
