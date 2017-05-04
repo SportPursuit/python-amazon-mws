@@ -206,7 +206,7 @@ class MWS(object):
             try:
                 parsed_response = DictWrapper(data, extra_data.get("Action") + "Result")
             except XMLError:
-                parsed_response = DataWrapper(data, response.headers)
+                parsed_response = DataWrapper(data.encode('utf-8'), response.headers)
 
         except HTTPError as e:
             error = MWSError(str(e.response.text))
