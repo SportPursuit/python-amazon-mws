@@ -110,7 +110,7 @@ class DataWrapper(object):
         if 'content-md5' in header:
             hash_ = calc_md5(self.original)
             if header['content-md5'] != hash_:
-                raise MWSError("Wrong Contentlength, maybe amazon error...")
+                raise MWSError("Wrong Contentlength, maybe amazon error...\nData: {0}".format(data))
 
     @property
     def parsed(self):
@@ -206,7 +206,6 @@ class MWS(object):
             try:
                 parsed_response = DictWrapper(data, extra_data.get("Action") + "Result")
             except XMLError:
-                print(data)
                 parsed_response = DataWrapper(data.encode('utf-8'), response.headers)
 
         except HTTPError as e:
