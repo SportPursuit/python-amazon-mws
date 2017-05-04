@@ -110,8 +110,7 @@ class DataWrapper(object):
         if 'content-md5' in header:
             hash_ = calc_md5(self.original.encode('utf-8'))
             if header['content-md5'] != hash_.decode('utf-8'):
-                raise MWSError("Wrong Contentlength, maybe amazon error...\nHeader md5: {0}"
-                               "\nCalc md5: {1}\nData: {2}".format(header['content-md5'], hash_, data))
+                raise MWSError("Wrong content hash, maybe amazon error...")
 
     @property
     def parsed(self):
@@ -201,6 +200,8 @@ class MWS(object):
             # be aware that response.content returns the content in bytes while response.text calls
             # response.content and converts it to unicode.
             data = response.text
+
+            print(response.text)
 
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
