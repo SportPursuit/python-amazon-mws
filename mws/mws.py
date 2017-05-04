@@ -108,8 +108,8 @@ class DataWrapper(object):
     def __init__(self, data, header):
         self.original = data
         if 'content-md5' in header:
-            hash_ = calc_md5(self.original)
-            if header['content-md5'] != hash_:
+            hash_ = calc_md5(self.original.encode('utf-8'))
+            if header['content-md5'] != hash_.decode('utf-8'):
                 raise MWSError("Wrong Contentlength, maybe amazon error...\nHeader md5: {0}"
                                "\nCalc md5: {1}\nData: {2}".format(header['content-md5'], hash_, data))
 
@@ -205,9 +205,9 @@ class MWS(object):
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
             try:
-                parsed_response = DictWrapper(response.text, extra_data.get("Action") + "Result")
+                parsed_response = DictWrapper(data, extra_data.get("Action") + "Result")
             except XMLError:
-                parsed_response = DataWrapper(response.content, response.headers)
+                parsed_response = DataWrapper(data, response.headers)
 
         except HTTPError as e:
             error = MWSError(str(e.response.text))
