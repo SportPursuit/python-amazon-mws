@@ -110,7 +110,9 @@ class DataWrapper(object):
         if 'content-md5' in header:
             hash_ = calc_md5(self.original.encode('utf-8'))
             if header['content-md5'] != hash_.decode('utf-8'):
-                raise MWSError("Wrong content hash, maybe amazon error...")
+                raise MWSError("Header hash: {0}, calculated has: {1}.\n"
+                               "Wrong content hash, maybe amazon error...".format(header['content-md5'],
+                                                                                  hash_.decode('utf-8')))
 
     @property
     def parsed(self):
