@@ -105,18 +105,18 @@ class DataWrapper(object):
     """
         Text wrapper in charge of validating the hash sent by Amazon.
     """
-    def __init__(self, data, header):
-        self.original = data
-        if 'content-md5' in header:
-            hash_ = calc_md5(self.original.encode('utf-8'))
-            if header['content-md5'] != hash_.decode('utf-8'):
+    def __init__(self, response):
+        self.original = response
+        if 'content-md5' in response.headers:
+            hash_ = calc_md5(response.content)
+            if response.headers['content-md5'] != hash_.decode('utf-8'):
                 raise MWSError("Header hash: {0}, calculated has: {1}.\n"
-                               "Wrong content hash, maybe amazon error...".format(header['content-md5'],
+                               "Wrong content hash, maybe amazon error...".format(response.headers['content-md5'],
                                                                                   hash_.decode('utf-8')))
 
     @property
     def parsed(self):
-        return self.original
+        return self.original.text
 
 
 class MWS(object):
@@ -198,10 +198,6 @@ class MWS(object):
             # to convert the dict to a url parsed string, so why do it twice if i can just pass the full url :).
             response = request(method, url, data=kwargs.get('body', ''), headers=headers)
             response.raise_for_status()
-            # When retrieving data from the response object,
-            # be aware that response.content returns the content in bytes while response.text calls
-            # response.content and converts it to unicode.
-            data = response.text
 
             print(response.text)
             print(response.headers)
@@ -209,9 +205,9 @@ class MWS(object):
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
             try:
-                parsed_response = DictWrapper(data, extra_data.get("Action") + "Result")
+                parsed_response = DictWrapper(response.text, extra_data.get("Action") + "Result")
             except XMLError:
-                parsed_response = DataWrapper(data, response.headers)
+                parsed_response = DataWrapper(response)
 
         except HTTPError as e:
             error = MWSError(str(e.response.text))
