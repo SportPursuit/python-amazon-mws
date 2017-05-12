@@ -204,6 +204,7 @@ class MWS(object):
             data = response.text
 
             print(response.text)
+            print(response.headers)
 
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
