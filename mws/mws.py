@@ -106,7 +106,7 @@ class DataWrapper(object):
         Text wrapper in charge of validating the hash sent by Amazon.
     """
     def __init__(self, content, text, headers):
-        self.original = content
+        self.original = text
         if 'content-md5' in headers:
             hash_ = calc_md5(content)
             if headers['content-md5'] != hash_.decode('utf-8'):
@@ -116,7 +116,7 @@ class DataWrapper(object):
 
     @property
     def parsed(self):
-        return self.text
+        return self.original
 
 
 class MWS(object):
