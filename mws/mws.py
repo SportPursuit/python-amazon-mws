@@ -105,18 +105,18 @@ class DataWrapper(object):
     """
         Text wrapper in charge of validating the hash sent by Amazon.
     """
-    def __init__(self, response):
-        self.original = response
-        if 'content-md5' in response.headers:
-            hash_ = calc_md5(response.content)
-            if response.headers['content-md5'] != hash_.decode('utf-8'):
+    def __init__(self, content, text, headers):
+        self.original = content
+        if 'content-md5' in headers:
+            hash_ = calc_md5(content)
+            if headers['content-md5'] != hash_.decode('utf-8'):
                 raise MWSError("Header hash: {0}, calculated has: {1}.\n"
-                               "Wrong content hash, maybe amazon error...".format(response.headers['content-md5'],
+                               "Wrong content hash, maybe amazon error...".format(headers['content-md5'],
                                                                                   hash_.decode('utf-8')))
 
     @property
     def parsed(self):
-        return self.original.text
+        return self.text
 
 
 class MWS(object):
@@ -207,7 +207,7 @@ class MWS(object):
             try:
                 parsed_response = DictWrapper(response.text, extra_data.get("Action") + "Result")
             except XMLError:
-                parsed_response = DataWrapper(response)
+                parsed_response = DataWrapper(response.content, response.text, response.headers)
 
         except HTTPError as e:
             error = MWSError(str(e.response.text))
