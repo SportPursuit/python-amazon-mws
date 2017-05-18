@@ -199,9 +199,6 @@ class MWS(object):
             response = request(method, url, data=kwargs.get('body', ''), headers=headers)
             response.raise_for_status()
 
-            print(response.text)
-            print(response.headers)
-
             # I do not check the headers to decide which content structure to server simply because sometimes
             # Amazon's MWS API returns XML error responses with "text/plain" as the Content-Type.
             try:
